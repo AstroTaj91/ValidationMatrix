@@ -1,0 +1,215 @@
+import jsPDF from 'jspdf';
+import type { IdeaWithAnalysis } from '../../drizzle/schema';
+
+/**
+ * Export analysis report as PDF
+ */
+export function exportAnalysisToPDF(idea: IdeaWithAnalysis): void {
+    if (!idea.analysis) {
+        throw new Error('No analysis available for this idea');
+    }
+
+    const doc = new jsPDF();
+    const analysis = idea.analysis;
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const contentWidth = pageWidth - margin * 2;
+    let yPos = margin;
+
+    // Helper function to add wrapped text
+    const addWrappedText = (text: string, fontSize: number = 12, isBold: boolean = false): number => {
+        doc.setFontSize(fontSize);
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        const lines = doc.splitTextToSize(text, contentWidth);
+        doc.text(lines, margin, yPos);
+        return yPos + lines.length * (fontSize * 0.5) + 5;
+    };
+
+    // Header
+    doc.setFillColor(59, 130, 246);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Validation Matrix Report', margin, 28);
+
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+    yPos = 55;
+
+    // Idea Title
+    yPos = addWrappedText(idea.title, 18, true);
+    yPos += 5;
+
+    // Description
+    doc.setTextColor(100, 100, 100);
+    yPos = addWrappedText(idea.description, 11);
+    doc.setTextColor(0, 0, 0);
+    yPos += 10;
+
+    // Scores Section
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+
+    yPos = addWrappedText('Validation Scores', 16, true);
+    yPos += 5;
+
+    // Score boxes
+    const scoreWidth = contentWidth / 3 - 5;
+    const scores = [
+        { label: 'Time', value: analysis.timeScore, note: 'Lower is better' },
+        { label: 'Money', value: analysis.moneyScore, note: 'Lower is better' },
+        { label: 'Opportunity', value: analysis.opportunityScore, note: 'Higher is better' },
+    ];
+
+    scores.forEach((score, i) => {
+        const x = margin + i * (scoreWidth + 7.5);
+
+        // Background
+        doc.setFillColor(245, 245, 245);
+        doc.roundedRect(x, yPos, scoreWidth, 35, 3, 3, 'F');
+
+        // Label
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(score.label, x + scoreWidth / 2, yPos + 12, { align: 'center' });
+
+        // Score
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${score.value}/100`, x + scoreWidth / 2, yPos + 25, { align: 'center' });
+
+        // Note
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(150, 150, 150);
+        doc.text(score.note, x + scoreWidth / 2, yPos + 32, { align: 'center' });
+    });
+
+    yPos += 50;
+
+    // Detailed Analysis Section
+    doc.setTextColor(0, 0, 0);
+    yPos = addWrappedText('Detailed Analysis', 16, true);
+    yPos += 5;
+
+    // Time Analysis
+    yPos = addWrappedText('Time Analysis', 12, true);
+    yPos = addWrappedText(analysis.timeAnalysis, 10);
+    yPos += 5;
+
+    // Check if we need a new page
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = margin;
+    }
+
+    // Money Analysis
+    yPos = addWrappedText('Money Analysis', 12, true);
+    yPos = addWrappedText(analysis.moneyAnalysis, 10);
+    yPos += 5;
+
+    // Check if we need a new page
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = margin;
+    }
+
+    // Opportunity Analysis
+    yPos = addWrappedText('Opportunity Analysis', 12, true);
+    yPos = addWrappedText(analysis.opportunityAnalysis, 10);
+    yPos += 10;
+
+    // Check if we need a new page
+    if (yPos > 220) {
+        doc.addPage();
+        yPos = margin;
+    }
+
+    // Overall Recommendation
+    doc.setFillColor(240, 249, 255);
+    const recStartY = yPos;
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    yPos += 10;
+    doc.text('Overall Recommendation', margin + 5, yPos);
+    yPos += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const recLines = doc.splitTextToSize(analysis.overallRecommendation, contentWidth - 10);
+    doc.text(recLines, margin + 5, yPos);
+    yPos += recLines.length * 5 + 10;
+
+    doc.roundedRect(margin, recStartY, contentWidth, yPos - recStartY, 3, 3, 'F');
+
+    // Re-draw text on top of background
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Overall Recommendation', margin + 5, recStartY + 10);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(recLines, margin + 5, recStartY + 18);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    const footerY = doc.internal.pageSize.getHeight() - 10;
+    doc.text(
+        `Generated by Validation Matrix • ${new Date().toLocaleDateString()}`,
+        pageWidth / 2,
+        footerY,
+        { align: 'center' }
+    );
+
+    // Save
+    const filename = idea.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    doc.save(`${filename}-analysis.pdf`);
+}
+
+/**
+ * Export analysis as JSON
+ */
+export function exportAnalysisToJSON(idea: IdeaWithAnalysis): void {
+    if (!idea.analysis) {
+        throw new Error('No analysis available for this idea');
+    }
+
+    const data = {
+        idea: {
+            id: idea.id,
+            title: idea.title,
+            description: idea.description,
+            createdAt: idea.createdAt,
+        },
+        analysis: {
+            timeScore: idea.analysis.timeScore,
+            moneyScore: idea.analysis.moneyScore,
+            opportunityScore: idea.analysis.opportunityScore,
+            timeAnalysis: idea.analysis.timeAnalysis,
+            moneyAnalysis: idea.analysis.moneyAnalysis,
+            opportunityAnalysis: idea.analysis.opportunityAnalysis,
+            overallRecommendation: idea.analysis.overallRecommendation,
+            createdAt: idea.analysis.createdAt,
+        },
+        exportedAt: new Date().toISOString(),
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const filename = idea.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    a.download = `${filename}-analysis.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
