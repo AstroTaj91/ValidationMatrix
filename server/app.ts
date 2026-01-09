@@ -9,6 +9,12 @@ import { getUserByOpenId } from './db';
 
 const app = express();
 
+// Request logger
+app.use((req, res, next) => {
+    console.log(`[Express] ${req.method} ${req.url}`);
+    next();
+});
+
 // Middleware
 app.use(cors({
     origin: ['http://localhost:5173', 'http://localhost:3000', 'https://validation-matrix.vercel.app'],
@@ -50,5 +56,11 @@ app.use(
         },
     })
 );
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[Express Error]', err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message, stack: err.stack });
+});
 
 export { app };
