@@ -1,14 +1,9 @@
-import { drizzle } from 'drizzle-orm/mysql2';
-import mysql from 'mysql2/promise';
 import { eq, desc } from 'drizzle-orm';
 import {
     users, ideas, analyses,
     type InsertUser, type InsertIdea, type InsertAnalysis,
     type IdeaWithAnalysis
 } from '../drizzle/schema';
-
-let pool: mysql.Pool | null = null;
-let db: ReturnType<typeof drizzle> | null = null;
 
 // Mock store for demonstration mode (when DATABASE_URL is missing)
 const mockStore = {
@@ -17,18 +12,29 @@ const mockStore = {
     analyses: [] as any[],
 };
 
+let db: any = null;
+
 /**
  * Initialize database connection pool
  */
-export async function getDb() {
-    if (!db && process.env.DATABASE_URL) {
+export async function getDb(): Promise<any> {
+    if (db) return db;
+
+    if (process.env.DATABASE_URL) {
         try {
-            pool = mysql.createPool(process.env.DATABASE_URL);
+            console.log('[Database] Connecting to MySQL...');
+            const { drizzle } = await import('drizzle-orm/mysql2');
+            const mysql = (await import('mysql2/promise')).default;
+
+            const pool = mysql.createPool(process.env.DATABASE_URL);
             db = drizzle(pool);
+            console.log('[Database] Connected successfully');
         } catch (error) {
             console.error('[Database] Failed to connect:', error);
             db = null;
         }
+    } else {
+        console.log('[Database] No DATABASE_URL provided, using mock store');
     }
     return db;
 }
