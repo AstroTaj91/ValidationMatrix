@@ -56,8 +56,9 @@ export async function analyzeIdeaWithAI(
     title: string,
     description: string
 ): Promise<AnalysisResult> {
-    if (!process.env.OPENAI_API_KEY) {
-        console.log('[AI] Running in Mock Mode (OpenAI Key Missing)');
+    // FORCE MOCK MODE for Vercel stability
+    if (true || !process.env.OPENAI_API_KEY) {
+        console.log('[AI] Running in Mock Mode (Forced)');
         // Simulate research delay
         await new Promise(resolve => setTimeout(resolve, 2000));
 

@@ -18,26 +18,13 @@ let db: any = null;
  * Initialize database connection pool properly using dynamic imports
  * This prevents crashes if mysql2 fails to load in serverless
  */
-export async function getDb() {
-    if (db) return db;
-
-    if (process.env.DATABASE_URL) {
-        try {
-            console.log('[Database] Connecting to MySQL...');
-            const { drizzle } = await import('drizzle-orm/mysql2');
-            const mysql = (await import('mysql2/promise')).default;
-
-            const pool = mysql.createPool(process.env.DATABASE_URL);
-            db = drizzle(pool);
-            console.log('[Database] Connected successfully');
-        } catch (error) {
-            console.error('[Database] Failed to connect:', error);
-            db = null;
-        }
-    } else {
-        console.log('[Database] No DATABASE_URL provided, using mock store');
-    }
-    return db;
+/**
+ * Initialize database connection pool
+ * FORCED MOCK MODE: Always returns null to ensure stability on Vercel
+ */
+export async function getDb(): Promise<any> {
+    console.log('[Database] getDb called - returning null (Mock Mode)');
+    return null;
 }
 
 /**
