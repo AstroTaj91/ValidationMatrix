@@ -4,6 +4,16 @@
     "outputDirectory": "dist",
     "framework": "vite",
     "installCommand": "npm install",
+    "functions": {
+        "api/trpc.ts": {
+            "memory": 1024,
+            "maxDuration": 30
+        },
+        "api/health.ts": {
+            "memory": 128,
+            "maxDuration": 10
+        }
+    },
     "rewrites": [
         {
             "source": "/api/trpc/:path*",
