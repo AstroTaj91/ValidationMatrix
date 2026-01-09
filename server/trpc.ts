@@ -1,13 +1,13 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import superjson from 'superjson';
-import type { User } from '../drizzle/schema';
+// import type { User } from '../drizzle/schema';
 
 /**
  * Context for tRPC procedures
  */
 export interface Context {
-    user: User | null;
+    user: any | null;
     req: CreateExpressContextOptions['req'];
     res: CreateExpressContextOptions['res'];
 }
@@ -18,7 +18,7 @@ export interface Context {
 export async function createContext(opts: CreateExpressContextOptions): Promise<Context> {
     // For demo purposes, we'll use a simple session-based auth
     // In production, implement proper JWT or OAuth
-    const user = (opts.req as any).user as User | null ?? null;
+    const user = (opts.req as any).user as any | null ?? null;
 
     return {
         user,
