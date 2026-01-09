@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import superjson from 'superjson';
+// import superjson from 'superjson';
 // import type { User } from '../drizzle/schema';
 
 /**
@@ -31,7 +31,7 @@ export async function createContext(opts: CreateExpressContextOptions): Promise<
  * Initialize tRPC with superjson transformer
  */
 const t = initTRPC.context<Context>().create({
-    transformer: superjson,
+    // transformer: superjson, // Disable to debug crash
     errorFormatter({ shape }) {
         return shape;
     },
